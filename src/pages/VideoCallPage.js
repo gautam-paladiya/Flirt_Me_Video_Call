@@ -10,7 +10,7 @@ import {
   FaRegStopCircle,
   FaArrowAltCircleRight,
 } from "react-icons/fa";
-
+import axios from "axios";
 import {
   CompleteConnected,
   GoOffline,
@@ -36,13 +36,21 @@ export class VideoCallPage extends Component {
       terms: false,
       genderModal: false,
       profileModal: false,
+      location: {
+        country: "",
+        state: "",
+        city: "",
+      },
     };
   }
 
   getStream = () => {
     try {
       const stream = navigator.mediaDevices
-        .getUserMedia({ video: true, audio: true })
+        .getUserMedia({
+          video: true,
+          audio: this.calling.connectStatus.CONNECTED ? true : false,
+        })
         .then((stream) => {
           return stream;
         })
@@ -59,18 +67,24 @@ export class VideoCallPage extends Component {
     this.remoteVideo.srcObject = await this.getStream();
   };
 
+  componentWillMount() {
+    axios.get("http://www.geoplugin.net/json.gp").then((res) => {
+      console.log(res);
+    });
+  }
+
   componentDidMount() {
     this.remoteVideo = document.getElementById("remote-video");
     this.localVideo = document.getElementById("local-video");
     this.initVideo();
 
-    this.socket = io("http://192.168.0.220:4000");
+    console.log(`${process.env.REACT_APP_SOCKET_CONNECTION_STRING}`);
+    this.socket = io(`${process.env.REACT_APP_SOCKET_CONNECTION_STRING}`);
 
     this.peer = new Peer({
       config: {
         iceServers: [
           { url: "stun:stun.l.google.com:19302" },
-
           { url: "stun:stunserver.org" },
         ],
       },
