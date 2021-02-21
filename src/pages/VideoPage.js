@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef, StyleSheet } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useSelector, useDispatch } from "react-redux";
+
 import io from "socket.io-client";
 import Peer from "peerjs";
-import Video1 from "../assets/videos/no_con_1.mp4";
-import Giphy from "../assets/videos/giphy.gif";
-import Rodal from "rodal";
 import SelectGenderComponent from "../Components/SelectGenderComponent";
 import { FaPlay } from "react-icons/fa";
 import { Switch } from "@material-ui/core";
@@ -13,56 +12,44 @@ import {
   FaRegStopCircle,
   FaArrowAltCircleRight,
 } from "react-icons/fa";
-import AndroidIcon from "../assets/images/androidIcon.png";
-import IosIcon from "../assets/images/ios.svg";
 import LoginRegisterComponent from "../Components/LoginRegisterComponent";
-import {} from "./styles.css";
+import {
+  CompleteConnected,
+  GoOffline,
+  GoOnline,
+  StartConnecting,
+  StartWaiting,
+  StopConnecting,
+  StartExit,
+  CONNECTED,
+  NOTCONNECTED,
+  Disconnect,
+  DISCONNECT,
+  NotConnected,
+} from "../store/CallingAction";
+
+const initialProfile = {
+  gender: "MALE",
+  terms: false,
+};
 
 function VideoPage() {
-  const status = {
-    NOTCONNECTED: "Not Connected",
-    CONNECTING: "Searching for Partner",
-    CONNECTED: "Connection Established",
-    DISCONNECTED: "Disconnected",
-  };
-
-  const initialState = {
-    local: "",
-    remote: "",
-    myId: "",
-    socketId: "",
-    peerId: "",
-    users: {},
-    clientPeerId: "",
-    initScreen: true,
-    connectStatus: status.NOTCONNECTED,
-  };
-
-  const initialProfile = {
-    gender: "MALE",
-    terms: false,
-  };
-
-  const customStyles = {
-    width: "auto",
-    height: "auto",
-    margin: 0,
-    top: "10%",
-    bottom: "10%",
-    left: "25%",
-    right: "25%",
-    overflow: "scroll",
-    overflowX: "hidden",
-  };
-
-  const [state, setstate] = useState(initialState);
   const [selectGender, setselectGender] = useState(false);
   const [toggleAuthModel, settoggleAuthModel] = useState(false);
   const [profile, setprofile] = useState(initialProfile);
+  const [ConnectedState, setConnectedState] = useState(false);
+  const [IsActive, setIsActive] = useState(false);
+
+  const calling = useSelector((state) => state.calling);
+  const callingRef = useRef(calling);
+  const dispatch = useDispatch();
+
   const socket = useRef();
   const peer = useRef();
   const localVideo = useRef();
   const remoteVideo = useRef();
+  const mediaConnection = useRef();
+  const dataConnection = useRef();
 
   const initVideo = async () => {
     // navigator.getUserMedia =
@@ -80,7 +67,7 @@ function VideoPage() {
       remoteVideo.current.removeAttribute("src");
     }
     var source = document.createElement("source");
-    source.setAttribute("src", Video1);
+    // source.setAttribute("src", Video1);
     remoteVideo.current.appendChild(source);
     remoteVideo.current.muted = true;
     remoteVideo.current.onended = function () {
@@ -101,95 +88,18 @@ function VideoPage() {
         });
       return stream;
     } catch (error) {
-      handleError(error);
+      console.log(error);
     }
   };
 
-  const constraints = (window.constraints = {
-    audio: false,
-    video: true,
-  });
-
-  function handleError(error) {
-    if (error.name === "ConstraintNotSatisfiedError") {
-      const v = constraints.video;
-      errorMsg(
-        `The resolution ${v.width.exact}x${v.height.exact} px is not supported by your device.`
-      );
-    } else if (error.name === "PermissionDeniedError") {
-      errorMsg(
-        "Permissions have not been granted to use your camera and " +
-          "microphone, you need to allow the page access to your devices in " +
-          "order for the demo to work."
-      );
-    }
-    errorMsg(`getUserMedia error: ${error.name}`, error);
-  }
-
-  function errorMsg(msg, error) {
-    const errorElement = document.querySelector("#errorMsg");
-    errorElement.innerHTML += `<p>${msg}</p>`;
-    if (typeof error !== "undefined") {
-      console.error(error);
-    }
-  }
-
   useEffect(() => {
-    // navigator.geolocation.getCurrentPosition((position) => {
-    //   console.log(
-    //     `lat=${position.coords.latitude}&lon=${position.coords.longitude}`
-    //   );
-    // });
-
     remoteVideo.current = document.getElementById("remote-video");
     localVideo.current = document.getElementById("local-video");
 
     // initLocalVideo();
     initVideo();
     socket.current = io("http://192.168.0.220:4000");
-    socket.current.on("connect", () => {
-      console.log(`socket connect id ${socket.current.id} `);
-      console.log(`peer connect id ${peer.current.id} `);
-      setstate({ ...state, socketId: socket.id });
-    });
 
-    socket.current.on("yourID", (id) => {
-      setstate({ ...state, myId: id });
-    });
-
-    socket.current.on("allUsers", (users) => {
-      console.log(users);
-      setstate({ ...state, users: users });
-    });
-
-    socket.current.on("requestCall", (arg, callback) => {
-      console.log(`id ${arg.peerId}`);
-      const conn = peer.current.connect(arg.peerId);
-      // setstate({ ...state, clientPeerId: peerId });
-      conn.on("open", async function () {
-        console.log(`con open ${conn.peer} `);
-        setstate({ ...state, connectStatus: status.CONNECTED });
-
-        socket.current.emit("userConnected", { connectedTo: conn.peer });
-
-        // Receive messages
-        conn.on("data", function (data) {
-          console.log("Received", data);
-        });
-
-        const call = peer.current.call(arg.peerId, await getStream());
-        call.on("stream", async (remoteStream) => {
-          // Show stream in some <video> element.
-          remoteVideo.current.srcObject = remoteStream;
-          localVideo.current.srcObject = await getStream();
-          // remoteVideo.load();
-          // remoteVideo.play();
-        });
-
-        // Send messages
-        // conn.send("Hello!");
-      });
-    });
     peer.current = new Peer({
       config: {
         iceServers: [
@@ -199,15 +109,73 @@ function VideoPage() {
         ],
       },
     });
+
+    window.addEventListener("load", function () {
+      setTimeout(function () {
+        // This hides the address bar:
+        window.scrollTo(0, 1);
+      }, 0);
+    });
+  }, []);
+
+  console.log("useEffect out");
+
+  useEffect(() => {
+    console.log("useEffect in");
+
+    socket.current.on("connect", () => {
+      console.log(`socket connect id ${socket.current.id} `);
+    });
+
+    socket.current.on("requestCall", async (arg, callback) => {
+      console.log(`requestCall id ${arg.peerId}`);
+      dispatch(StartConnecting());
+      dataConnection.current = await peer.current.connect(arg.peerId);
+      // console.log(`client id ${dataConnection.current.peer}`);
+      dataConnection.current.on("open", async function () {
+        dispatch(CompleteConnected());
+
+        socket.current.emit("userConnected", {
+          connectedTo: arg.socketId,
+        });
+
+        mediaConnection.current = await peer.current.call(
+          dataConnection.current.peer,
+          await getStream()
+        );
+        mediaConnection.current.on("stream", async (remoteStream) => {
+          // Show stream in some <video> element.
+          remoteVideo.current.srcObject = remoteStream;
+          localVideo.current.srcObject = await getStream();
+        });
+        mediaConnection.current.on("close", function () {
+          console.log("media close");
+        });
+
+        // Send messages
+        // conn.send("Hello!");
+      });
+
+      // Receive messages
+      dataConnection.current.on("data", function (data) {
+        console.log("Received", data);
+      });
+      dataConnection.current.on("close", async function () {
+        console.log("conn close");
+        // await setisActive(true);
+        dispatch(Disconnect());
+        DisconnectCall();
+      });
+    });
+
     peer.current.on("open", function (id) {
       console.log("My peer ID is: " + id);
-      // setstate({ ...state, peerId: id });
     });
 
     peer.current.on("connection", (conn) => {
-      console.log(`peer connected ${conn.peer}`);
-      setstate({ ...state, connectStatus: status.CONNECTED });
-      socket.current.emit("userConnected", { connectedTo: conn.peer });
+      console.log(`peer connected ${JSON.stringify(conn.open)}`);
+      dispatch(CompleteConnected());
+      socket.current.emit("userConnected", { connectedTo: socket.current.id });
 
       conn.on("data", (data) => {
         // Will print 'hi!'
@@ -217,6 +185,13 @@ function VideoPage() {
         console.log("peer open");
         // conn.send({ peerId: peer.current.id });
       });
+      conn.on("close", async function () {
+        console.log("conns close");
+        // await setisActive(true);
+        dispatch(Disconnect());
+        DisconnectCall();
+      });
+      dataConnection.current = conn;
     });
 
     peer.current.on("call", async (call) => {
@@ -225,55 +200,94 @@ function VideoPage() {
         // Show stream in some <video> element.
         remoteVideo.current.srcObject = remoteStream;
         localVideo.current.srcObject = await getStream();
+
         // remoteVideo.load();
         // remoteVideo.play();
       });
+      call.on("close", function () {
+        console.log("medias close");
+        // disconnect();
+      });
+      mediaConnection.current = call;
     });
 
     peer.current.on("error", (errr) => {
       console.log(`peer erro ${JSON.stringify(errr)}`);
     });
 
+    peer.current.on("close", function () {
+      console.log("peer close");
+      // disconnect();
+      // peer.current.disconnect();
+    });
+
+    peer.current.on("error", function (err) {
+      console.log(`peer erro ${err.type}`);
+    });
+
     peer.current.on("disconnected", () => {
       console.log("peer disconnected");
-      setstate({ ...state, connectStatus: status.DISCONNECTED });
 
-      initLocalVideo();
-      socket.current.emit("startDisconnect", {
-        peerId: peer.current.id,
-      });
+      socket.current.emit(
+        "disconnected",
+        { isAvailable: callingRef.current.isActive },
+        async (res) => {
+          dispatch(NotConnected());
+          dispatch(StopConnecting());
+          console.log("database disconnected ", callingRef.current.isActive);
+          if (callingRef.current.isActive) {
+            startConnecting();
+          }
+        }
+      );
     });
-
-    window.addEventListener("load", function () {
-      setTimeout(function () {
-        // This hides the address bar:
-        window.scrollTo(0, 1);
-      }, 0);
-    });
-
-    return () => {
-      socket.current.disconnect();
-    };
-  }, []);
+  }, [calling]);
 
   const startConnecting = () => {
     console.log("start connecting");
-    socket.current.emit("start", {
-      peerId: peer.current.id,
-    });
-    setstate({ ...state, connectStatus: status.CONNECTING });
+    dispatch(GoOnline());
+    socket.current.emit(
+      "start",
+      {
+        peerId: peer.current.id,
+      },
+      (response) => {
+        console.log(response.message);
+
+        if (response.userFound) {
+          dispatch(StartConnecting());
+        } else {
+          dispatch(StartWaiting());
+        }
+      }
+    );
   };
 
-  const startDisconnecting = () => {
-    // console.log(`start dis connecting ${peer.current.connections}`);
-    setstate({ ...state, connectStatus: status.NOTCONNECTED });
-    if (peer.current.connections) {
-      console.log("disconnect");
+  const DisconnectCall = () => {
+    console.log(`DisconnectCall ${callingRef.current.connected}`);
+    if (callingRef.current.connected) {
+      console.log("con found");
+      dataConnection.current.close();
       peer.current.disconnect();
+      // peer.current.destroy();
+      initVideo();
+      dispatch(NotConnected());
+    } else {
+      console.log("con found not", callingRef.current.isActive);
+
+      socket.current.emit(
+        "disconnected",
+        { isAvailable: callingRef.current.isActive },
+        (res) => {
+          dispatch(NotConnected());
+          dispatch(StopConnecting());
+          console.log("database dis connected ", calling.isActive);
+        }
+      );
     }
   };
 
-  console.log(`sate ${JSON.stringify(state)}`);
+  console.log(`sate ${JSON.stringify(calling)}`);
 
   return (
     <div className="w-screen h-screen flex flex-col bg-black  ">
@@ -286,7 +300,7 @@ function VideoPage() {
           height="100"
         />
 
-        {state.connectStatus == status.NOTCONNECTED && (
+        {!calling.isActive && (
           <div className="opacity-80 w-full h-full flex flex-col items-center justify-center space-y-9 absolute">
             <h1 className="text-5xl lg:font-6xl font-bold text-red-500 ">
               Flirt Me Baby
@@ -303,7 +317,10 @@ function VideoPage() {
               </div>
               <div
                 className="p-2 cursor-pointer rounded-lg shadow-md bg-blue-500 text-white text-base font-bold w-1/3 flex items-center justify-center"
-                onClick={() => startConnecting()}
+                onClick={() => {
+                  socket.current.emit("online");
+                  startConnecting();
+                }}
               >
                 <FaPlay size={25} className="text-white mr-3" />
                 {"   "} Start
@@ -311,7 +328,7 @@ function VideoPage() {
             </div>
             <div className="flex bg-white rounded-lg p-1 items-center mt-5">
               <Switch
-                checked={state.checkedB}
+                checked={profile.terms}
                 onChange={(e) => {
                   setprofile({ ...profile, terms: e.target.checked });
                 }}
@@ -339,21 +356,31 @@ function VideoPage() {
             className="w-full h-full min-h-full  bg-transparent object-cover "
             style={{
               visibility:
-                state.connectStatus == status.CONNECTED ? "visible" : "hidden",
+                calling.connectStatus == CONNECTED ? "visible" : "hidden",
             }}
           />
         </div>
 
-        {state.connectStatus !== status.NOTCONNECTED && (
+        {calling.isActive && (
           <div className=" absolute w-full bottom-0">
+            {ConnectedState && <p className="text-lg font-bold">Connected</p>}
             <div className="flex justify-center ">
               <div
                 className="bg-red-500 m-2 rounded-full cursor-pointer"
-                onClick={startDisconnecting}
+                onClick={async () => {
+                  dispatch(GoOffline());
+                  dispatch(StopConnecting());
+                  DisconnectCall();
+                }}
               >
                 <FaRegStopCircle size={60} color="white" className="p-2" />
               </div>
-              <div className="bg-blue-600 m-2 rounded-full cursor-pointer">
+              <div
+                className="bg-blue-600 m-2 rounded-full cursor-pointer"
+                onClick={async () => {
+                  dispatch(Disconnect());
+                }}
+              >
                 <FaArrowAltCircleRight
                   size={60}
                   color="white"

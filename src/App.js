@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
-import MainPage from "./pages/MainPage";
 import ContactPage from "./pages/ContactPage";
+import VideoCallPage from "./pages/VideoCallPage";
 import VideoPage from "./pages/VideoPage";
 
 function App() {
@@ -8,7 +8,7 @@ function App() {
     <div>
       <Router>
         <Switch>
-          <Route component={VideoPage} path="/" exact />
+          <Route component={VideoCallPage} path="/" exact />
           <Route component={ContactPage} path="/contact" />
         </Switch>
       </Router>
