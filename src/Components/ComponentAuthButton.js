@@ -12,7 +12,7 @@ function ComponentAuthButton({ Img, text, ...props }) {
     >
       <Img size={30} className=" text-black group-hover:text-white" />
       <div className="text-lg text-gray-700 font-bold uppercase group-hover:text-white">
-        {text}
+        Login with Google
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import ContactPage from "./pages/ContactPage";
-import VideoCallPage from "./pages/VideoCallPage";
+import VideoCallPage from "./pages/VideoCallPage/index";
 
 function App() {
   return (
