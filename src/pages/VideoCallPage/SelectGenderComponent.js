@@ -62,6 +62,7 @@ function SelectGenderComponent(props) {
       <List>
         {list.map(({ icon, text }) => (
           <ListItem
+            key={text}
             className={classes.listItem}
             button
             onClick={() => onSelectGender(text)}

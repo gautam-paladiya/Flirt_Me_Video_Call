@@ -1,10 +1,11 @@
 import React, { Component } from "react";
+import { countries } from "countries-list";
 
 import io from "socket.io-client";
 import Peer from "peerjs";
 import { FaPlay, FaGlobe, FaCaretDown } from "react-icons/fa";
+
 import {
-  Switch,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -51,6 +52,10 @@ import ProfileDialogComponent from "./ProfileDialogComponent";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 import ComponentCheckoutForm from "../../Components/ComponentCheckoutForm";
+import GoogleIcon from "../../assets/images/google.png";
+import { FaFacebook, FaEnvelope } from "react-icons/fa";
+import { Alert } from "react-bootstrap";
+
 const stripePromise = loadStripe("pk_test_6pRNASCoBOKtIshFeQd4XMUh");
 
 export class VideoCallPage extends Component {
@@ -61,7 +66,7 @@ export class VideoCallPage extends Component {
       terms: localStorage.getItem("terms") == "true" ? true : false,
       genderModal: false,
       profileModal: false,
-      country: localStorage.getItem("country") || "GLOBAL",
+      country: localStorage.getItem("country"),
       anchorEl: null,
       camNotFound: false,
       showCameraDialog: false,
@@ -69,10 +74,13 @@ export class VideoCallPage extends Component {
       showProfileDialog: false,
       showCGenderDialog: false,
       showTermsPopper: false,
+      showGenderPopper: false,
       showLoginRegister: false,
       showCountrySelect: false,
+      showAlerDisconnect: false,
       cGender: localStorage.getItem("cGender") || "OTHER",
       cCountry: localStorage.getItem("cCountry") || "GLOBAL",
+      client: {},
     };
     this.termRef = React.createRef();
   }
@@ -116,10 +124,42 @@ export class VideoCallPage extends Component {
   };
 
   componentWillMount() {
-    axios.get("http://www.geoplugin.net/json.gp").then((res) => {
-      console.log(res);
-    });
+    if (typeof this.state.country == "undefined" || !this.state.country) {
+      axios.get("http://www.geoplugin.net/json.gp").then((res) => {
+        console.log(`country ${JSON.stringify(res)}`);
+        if (res.data.geoplugin_status == 200) {
+          this.setState(
+            { ...this.state, country: res.data.geoplugin_countryCode },
+            () => {
+              localStorage.setItem("country", res.data.geoplugin_countryCode);
+            }
+          );
+        }
+      });
+    }
   }
+
+  setGender = () => {
+    if (this.state.gender) {
+      this.socket.emit("setGender", {
+        gender: this.state.gender,
+      });
+    }
+  };
+
+  setCountry = () => {
+    if (this.state.country) {
+      this.socket.emit("setCountry", { country: this.state.country });
+    }
+  };
+
+  showAlert = () => {
+    this.setState({ ...this.state, showAlerDisconnect: true });
+
+    setTimeout(() => {
+      this.setState({ ...this.state, showAlerDisconnect: false });
+    }, 5000);
+  };
 
   componentDidMount() {
     this.remoteVideo = document.getElementById("remote-video");
@@ -139,14 +179,18 @@ export class VideoCallPage extends Component {
     });
 
     this.socket.on("connect", () => {
-      console.log(`socket connect id ${this.socket.id} `);
+      console.log(`socket connect id ${this.socket.id} ${this.state.country} `);
+    });
+
+    this.socket.on("yourID", () => {
+      this.setCountry();
+      this.setGender();
     });
 
     this.socket.on("requestCall", async (arg, callback) => {
-      console.log(`requestCall id ${arg.peerId}`);
       this.props.dispatch(StartConnecting());
       this.dataConnection = await this.peer.connect(arg.peerId);
-      console.log(`client id ${this.dataConnection.peer}`);
+
       this.dataConnection.on("open", async () => {
         this.props.dispatch(CompleteConnected());
 
@@ -166,9 +210,6 @@ export class VideoCallPage extends Component {
         this.mediaConnection.on("close", () => {
           console.log("media close");
         });
-
-        // Send messages
-        // conn.send("Hello!");
       });
 
       // Receive messages
@@ -178,9 +219,18 @@ export class VideoCallPage extends Component {
       this.dataConnection.on("close", async () => {
         console.log("conn close");
         this.DisconnectRemote();
-
+        this.showAlert();
         // await setisActive(true);
         // this.DisconnectCall();
+      });
+    });
+
+    this.socket.on("afterConnect", (client) => {
+      console.log(`after connect ${client}`);
+      this.setState({
+        ...this.state,
+        client: client,
+        showAlerDisconnect: false,
       });
     });
 
@@ -191,9 +241,9 @@ export class VideoCallPage extends Component {
     this.peer.on("connection", (conn) => {
       console.log(`peer connected ${JSON.stringify(conn.open)}`);
       this.props.dispatch(CompleteConnected());
-      this.socket.emit("userConnected", {
-        connectedTo: this.socket.id,
-      });
+      // this.socket.emit("userConnected", {
+      //   connectedTo: this.socket.id,
+      // });
 
       conn.on("data", (data) => {
         // Will print 'hi!'
@@ -208,6 +258,7 @@ export class VideoCallPage extends Component {
         // await setisActive(true);
         // this.DisconnectCall();
         this.DisconnectRemote();
+        this.showAlert();
       });
       this.dataConnection = conn;
     });
@@ -259,6 +310,9 @@ export class VideoCallPage extends Component {
         }
       );
     });
+    window.addEventListener("load", function () {
+      window.scrollTo(0, 1);
+    });
   }
   componentDidUpdate(prevProps, preState) {
     // console.log(`update ${this.peer.disconnected}`);
@@ -273,6 +327,10 @@ export class VideoCallPage extends Component {
     }
     if (!this.state.terms) {
       this.setState({ ...this.state, showTermsPopper: true });
+      return;
+    }
+    if (!this.state.gender || typeof this.state.gender == "undefined") {
+      this.setState({ ...this.state, showGenderDialog: true });
       return;
     }
 
@@ -346,6 +404,7 @@ export class VideoCallPage extends Component {
       },
       () => {
         localStorage.setItem("gender", val);
+        this.setGender();
       }
     );
   };
@@ -423,8 +482,10 @@ export class VideoCallPage extends Component {
 
   render() {
     console.log(`props ${JSON.stringify(this.state)}`);
+    const { country } = this.state.client;
+    console.log(`cou ${countries.country}`);
     return (
-      <div className="w-screen h-screen flex flex-col bg-black  ">
+      <div className="w-screen h-screen flex flex-col bg-black overflow-hidden  ">
         <CamNotFoundDialog
           display={this.state.showCameraDialog}
           onClose={() =>
@@ -457,7 +518,7 @@ export class VideoCallPage extends Component {
           onClose={this.handleToggleProfileDialog}
         />
 
-        <div className="flex w-full h-full relative flex-1 overflow-x-hidden">
+        <div className="flex w-full h-full relative flex-1 overflow-hidden">
           <video
             autoPlay
             id="remote-video"
@@ -467,17 +528,17 @@ export class VideoCallPage extends Component {
           />
 
           {!this.props.calling.isActive && (
-            <div className="opacity-80 w-full h-full flex flex-col items-center justify-center space-y-9 absolute">
+            <div className="opacity-80  flex flex-col items-center justify-center space-y-9 absolute top-0 left-0 h-full w-full">
               <img src="/flirtLogo.png" className="w-96 h-80 " />
               {/* <h1 className="text-5xl lg:font-6xl font-bold text-red-500 ">
                 Flirt Me Baby
               </h1> */}
-              <h2 className="text-white font-extrabold">
+              <h2 className="text-red-500 font-extrabold text-2xl">
                 856,546 joined Flirt Me Baby
               </h2>
-              <div className="flex flex-row w-full justify-center space-x-3">
+              <div className="flex flex-row w-full justify-center space-x-3 my-10 ">
                 <div
-                  className=" p-2 cursor-pointer rounded-lg shadow-md bg-gray-100 text-black text-lg font-bold w-1/4 flex items-center justify-center"
+                  className=" py-2 cursor-pointer rounded-lg shadow-md bg-gray-100 text-black text-lg font-bold px-5 flex items-center justify-center"
                   onClick={() => this.toggleGender()}
                 >
                   I AM : {this.state.gender}
@@ -487,7 +548,7 @@ export class VideoCallPage extends Component {
                     this.socket.emit("online");
                     this.startConnecting();
                   }}
-                  className=" p-2 cursor-pointer rounded-lg shadow-md bg-gray-100 text-black text-lg font-bold w-1/4 flex items-center justify-center"
+                  className=" py-2 cursor-pointer rounded-lg shadow-md bg-gray-100 text-black text-lg font-bold px-5 flex items-center justify-center"
                 >
                   {<FaPlay size={22} className="text-black mr-3" />} Start
                 </div>
@@ -497,6 +558,20 @@ export class VideoCallPage extends Component {
                 onChangeTerms={(e) => this.handleChangeTerms(e)}
                 showTermsPopper={this.state.showTermsPopper}
               />
+              <div className="flex items-center justify-center space-x-3 w-full ">
+                <img
+                  src={GoogleIcon}
+                  className="w-16 h-16 rounded-full bg-white p-2 cursor-pointer"
+                />
+                <FaFacebook
+                  size={64}
+                  className="p-2 bg-blue-700 rounded-full text-white cursor-pointer"
+                />
+                <FaEnvelope
+                  size={64}
+                  className="p-2 bg-white rounded-full cursor-pointer"
+                />
+              </div>
             </div>
           )}
 
@@ -520,38 +595,84 @@ export class VideoCallPage extends Component {
           </div>
 
           {this.props.calling.isActive && (
-            <div>
-              <div className="absolute top-0 left-0 w-full flex space-x-2 p-5">
-                <div
-                  className=" p-1 cursor-pointer rounded-lg shadow-md bg-gray-100 text-black text-sm lg:text-lg font-bold  flex items-center justify-center"
-                  onClick={() => this.handleCSelectGenderDialog()}
-                >
-                  FLIRT WITH
-                  {this.state.cGender === "MALE" && (
-                    <img src={MaleIcon} className="w-8 h-8" />
-                  )}
-                  {this.state.cGender === "FEMALE" && (
-                    <img src={FemaleIcon} className="w-8 h-8" />
-                  )}
-                  {this.state.cGender === "OTHER" && (
-                    <img src={GenOIcon} className="w-8 h-8" />
-                  )}
-                  <FaCaretDown size={25} className="ml-2" />
+            <div className="">
+              <div className="flex flex-col absolute top-0 left-0 right-0 justify-between items-center">
+                <div className="flex space-x-2 p-2">
+                  <div
+                    className=" p-2 cursor-pointer rounded-lg shadow-md bg-gray-100 text-black text-base lg:text-lg font-bold  flex items-center justify-center"
+                    onClick={() => this.handleCSelectGenderDialog()}
+                  >
+                    FLIRT WITH
+                    {this.state.cGender === "MALE" && (
+                      <img src={MaleIcon} className="w-8 h-8 ml-2" />
+                    )}
+                    {this.state.cGender === "FEMALE" && (
+                      <img src={FemaleIcon} className="w-8 h-8 ml-2" />
+                    )}
+                    {this.state.cGender === "OTHER" && (
+                      <img src={GenOIcon} className="w-8 h-8 ml-2" />
+                    )}
+                    <FaCaretDown size={25} className="ml-2" />
+                  </div>
+                  <div
+                    className=" p-2 cursor-pointer rounded-lg shadow-md bg-gray-100 text-black text-base lg:text-lg font-bold flex items-center justify-center"
+                    onClick={() => this.handleCountrySelectDialog()}
+                  >
+                    LOCATION{" "}
+                    {this.state.cCountry == "GLOBAL" ? (
+                      <FaGlobe size={30} className="ml-2" />
+                    ) : (
+                      <div className={`flag:${this.state.cCountry} ml-2`} />
+                    )}
+                    <FaCaretDown size={25} className="ml-2" />
+                  </div>
                 </div>
-                <div
-                  className=" p-1 cursor-pointer rounded-lg shadow-md bg-gray-100 text-black text-sm lg:text-lg font-bold flex items-center justify-center"
-                  onClick={() => this.handleCountrySelectDialog()}
-                >
-                  LOCATION{" "}
-                  {this.state.cCountry == "GLOBAL" ? (
-                    <FaGlobe size={30} className="ml-1" />
-                  ) : (
-                    <div className={`flag:${this.state.cCountry} ml-1`} />
+                <div className="flex  items-center justify-between w-full p-2 lg:absolute lg:top-0 lg:right-0 lg:left-0">
+                  {localStorage.getItem("name") && (
+                    <div
+                      className=" flex sm:flex-col justify-between items-center cursor-pointer "
+                      onClick={() => this.handleToggleProfileDialog()}
+                    >
+                      <img
+                        className="w-10 h-10 rounded-lg "
+                        src={localStorage.getItem("picture")}
+                      />
+                      <h1 className="text-base font-bold text-white hidden lg:block">
+                        {localStorage.getItem("name")}
+                      </h1>
+                    </div>
                   )}
-                  <FaCaretDown size={25} className="ml-2" />
+                  {Object.keys(this.state.client).length > 0 && (
+                    <div
+                      className="flex flex-col justify-between items-center cursor-pointer "
+                      onClick={() => this.handleToggleProfileDialog()}
+                    >
+                      {this.state.client.gender.toUpperCase() === "MALE" && (
+                        <img src={MaleIcon} className="w-14 h-14" />
+                      )}
+                      {this.state.client.gender.toUpperCase() === "FEMALE" && (
+                        <img src={FemaleIcon} className="w-14 h-14 " />
+                      )}
+                      {this.state.client.gender.toUpperCase() === "OTHER" && (
+                        <img src={GenOIcon} className="w-14 h-14 " />
+                      )}
+                      <div className="flex items-center justify-between mt-2">
+                        <img
+                          className={`w-8 h-8 rounded-full flag:${this.state.client.country.toUpperCase()}`}
+                        />
+                        <div className="text-base font-bold text-white ml-2">
+                          {Object.entries(countries).map(([key, value]) => {
+                            if (key == country) {
+                              return value.name;
+                            }
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="absolute w-full bottom-0 left-0 ">
+              <div className="absolute flex flex-col w-full bottom-0 left-0 pb-10 ">
                 <div className="flex justify-center ">
                   <div
                     className="bg-red-500 m-2 rounded-full cursor-pointer"
@@ -560,7 +681,7 @@ export class VideoCallPage extends Component {
                       this.DisconnectCall();
                     }}
                   >
-                    <FaRegStopCircle size={60} color="white" className="p-2" />
+                    <FaRegStopCircle size={70} color="white" className="p-2" />
                   </div>
                   <div
                     className="bg-blue-600 m-2 rounded-full cursor-pointer"
@@ -569,7 +690,7 @@ export class VideoCallPage extends Component {
                     }}
                   >
                     <FaArrowAltCircleRight
-                      size={60}
+                      size={70}
                       color="white"
                       className="p-2"
                     />
@@ -579,7 +700,7 @@ export class VideoCallPage extends Component {
             </div>
           )}
         </div>
-        {this.props.calling.connectStatus == CONNECTED && (
+        {/* {this.props.calling.connectStatus == CONNECTED && (
           <div className="bg-gray-400">
             <div className="flex flex-row items-center justify-between mx-2 mt-1">
               <BsGearFill size={30} className="cursor-pointer" />
@@ -595,20 +716,14 @@ export class VideoCallPage extends Component {
               </div>
             </div>
           </div>
-        )}
-        {localStorage.getItem("name") && (
-          <div
-            className="absolute flex top-0 right-0 sm:flex-col justify-between items-center cursor-pointer pt-5 pr-1 lg:pr-5"
-            onClick={() => this.handleToggleProfileDialog()}
+        )} */}
+        {this.state.showAlerDisconnect && (
+          <Alert
+            variant="primary"
+            className="absolute bottom-0 left-0 right-0 m-auto"
           >
-            <img
-              className="w-10 h-10 rounded-lg "
-              src={localStorage.getItem("picture")}
-            />
-            <h1 className="text-base font-bold text-white hidden lg:block">
-              {localStorage.getItem("name")}
-            </h1>
-          </div>
+            Opps User left room ...
+          </Alert>
         )}
       </div>
     );

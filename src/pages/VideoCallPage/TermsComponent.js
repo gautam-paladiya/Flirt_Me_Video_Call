@@ -12,7 +12,8 @@ import React, { useRef } from "react";
 const useStyle = makeStyles({
   parent: {
     display: "flex",
-    padding: 5,
+    padding: 3,
+    margin: 20,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -37,7 +38,7 @@ function TermsComponent(props) {
       <Popper id="terms" open={showTermsPopper} anchorEl={refTerms.current}>
         <Paper>You must agree to continue</Paper>
       </Popper>
-      <p className="text-sm font-bold">
+      <p className="text-lg font-bold">
         I certify I have read and agree to the <u>Terms of Use</u> and
         Guidelines.
       </p>

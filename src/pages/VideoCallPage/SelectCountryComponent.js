@@ -11,6 +11,7 @@ function SelectCountryComponent(props) {
       <div className="grid grid-cols-2 gap-0 lg:grid-cols-3 ">
         {Object.entries(countries).map((k, v) => (
           <div
+            key={v}
             className="flex  justify-start items-center space-x-3 p-1 cursor-pointer hover:bg-gray-400 hover:text-white"
             onClick={() => setCountrySelect(k[0])}
           >
