@@ -55,6 +55,7 @@ import ComponentCheckoutForm from "../../Components/ComponentCheckoutForm";
 import GoogleIcon from "../../assets/images/google.png";
 import { FaFacebook, FaEnvelope } from "react-icons/fa";
 import { Alert } from "react-bootstrap";
+import AxiosInstance from "../../utils/AxiosInstance";
 
 const stripePromise = loadStripe("pk_test_6pRNASCoBOKtIshFeQd4XMUh");
 
@@ -125,7 +126,7 @@ export class VideoCallPage extends Component {
 
   componentWillMount() {
     if (typeof this.state.country == "undefined" || !this.state.country) {
-      axios.get("http://www.geoplugin.net/json.gp").then((res) => {
+      AxiosInstance.get("getCountry").then((res) => {
         console.log(`country ${JSON.stringify(res)}`);
         if (res.data.geoplugin_status == 200) {
           this.setState(

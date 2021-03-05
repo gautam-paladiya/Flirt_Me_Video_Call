@@ -4,6 +4,7 @@ import ReactDOM from "react-dom";
 import "./index.css";
 import "./flag.css";
 import "./tailwind.output.css";
+import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 
 import App from "./App";
 import { Provider } from "react-redux";
@@ -15,3 +16,5 @@ ReactDOM.render(
   </Provider>,
   document.getElementById("root")
 );
+
+serviceWorkerRegistration.register();

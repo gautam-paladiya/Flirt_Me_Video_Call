@@ -2,18 +2,22 @@ const workboxBuild = require("workbox-build");
 // NOTE: This should be run *AFTER* all your assets are built
 const buildSW = () => {
   // This will return a Promise
-  workboxBuild
+  return workboxBuild
     .injectManifest({
-      swSrc: "src/sw-template.js", // this is your sw template file
-      swDest: "build/service-worker.js", // this will be created in the build step
+      swSrc: "src/sw-custom.js", // custom sw rule
+
+      swDest: "build/sw.js", // sw output file (auto-generated
+
       globDirectory: "build",
-      globPatterns: ["**/*.{png}"], // precaching jpg files
+
+      globPatterns: ["**/*.{js,css,html,png,svg}"],
+
+      maximumFileSizeToCacheInBytes: 5 * 1024 * 102,
     })
     .then(({ count, size, warnings }) => {
-      // Optionally, log any warnings and details.
       warnings.forEach(console.warn);
-      console.log(`${count} files will be precached, totaling ${size} bytes.`);
-    })
-    .catch(console.error);
+      console.info(`${count} files will be precached,
+                  totaling ${size / (1024 * 1024)} MBs.`);
+    });
 };
 buildSW();
