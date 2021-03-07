@@ -12,11 +12,6 @@ import {
   DialogContentText,
   Button,
   DialogActions,
-  Popper,
-  makeStyles,
-  Paper,
-  withStyles,
-  Box,
 } from "@material-ui/core";
 import { BsGearFill } from "react-icons/bs";
 import {
@@ -24,7 +19,6 @@ import {
   FaRegStopCircle,
   FaArrowAltCircleRight,
 } from "react-icons/fa";
-import axios from "axios";
 import {
   CompleteConnected,
   GoOffline,
@@ -32,11 +26,7 @@ import {
   StartConnecting,
   StartWaiting,
   StopConnecting,
-  StartExit,
   CONNECTED,
-  NOTCONNECTED,
-  Disconnect,
-  DISCONNECT,
   NotConnected,
 } from "../../store/CallingAction";
 import { connect } from "react-redux";
@@ -56,8 +46,13 @@ import GoogleIcon from "../../assets/images/google.png";
 import { FaFacebook, FaEnvelope } from "react-icons/fa";
 import { Alert } from "react-bootstrap";
 import AxiosInstance from "../../utils/AxiosInstance";
+import ComponentFacebookButton from "../../Components/ComponentFacebookButton";
+import ComponentGoogleButton from "../../Components/ComponentGoogleButton";
+import cookie from "react-cookies";
 
 const stripePromise = loadStripe("pk_test_6pRNASCoBOKtIshFeQd4XMUh");
+const CALLER = "CALLER";
+const RECEIVER = "RECEIVER";
 
 export class VideoCallPage extends Component {
   constructor() {
@@ -82,16 +77,19 @@ export class VideoCallPage extends Component {
       cGender: localStorage.getItem("cGender") || "OTHER",
       cCountry: localStorage.getItem("cCountry") || "GLOBAL",
       client: {},
+      type: CALLER,
     };
     this.termRef = React.createRef();
   }
 
-  getStream = () => {
+  token = cookie.load("id");
+
+  getStream = (audio = true, video = true) => {
     try {
       const stream = navigator.mediaDevices
         .getUserMedia({
-          video: true,
-          audio: this.props.calling.connectStatus == CONNECTED ? true : false,
+          video: video,
+          audio: audio,
         })
         .then((stream) => {
           return stream;
@@ -108,10 +106,11 @@ export class VideoCallPage extends Component {
   };
 
   initVideo = async () => {
-    var stream = await this.getStream();
+    var stream = await this.getStream(false, true);
     console.log(`${stream}`);
     if (stream) {
       this.remoteVideo.srcObject = stream;
+
       console.log("cam found");
       await this.setState({ ...this.state, camNotFound: false });
     } else {
@@ -135,6 +134,10 @@ export class VideoCallPage extends Component {
               localStorage.setItem("country", res.data.geoplugin_countryCode);
             }
           );
+        } else {
+          this.setState({ ...this.state, country: "US" }, () => {
+            localStorage.setItem("country", "US");
+          });
         }
       });
     }
@@ -190,9 +193,10 @@ export class VideoCallPage extends Component {
 
     this.socket.on("requestCall", async (arg, callback) => {
       this.props.dispatch(StartConnecting());
+      this.setState({ ...this.state, type: RECEIVER });
       this.dataConnection = await this.peer.connect(arg.peerId);
 
-      this.dataConnection.on("open", async () => {
+      this.dataConnection.on("open", async (clientPeerId) => {
         this.props.dispatch(CompleteConnected());
 
         this.socket.emit("userConnected", {
@@ -201,12 +205,12 @@ export class VideoCallPage extends Component {
 
         this.mediaConnection = await this.peer.call(
           this.dataConnection.peer,
-          await this.getStream()
+          await this.getStream(true, true)
         );
         this.mediaConnection.on("stream", async (remoteStream) => {
           // Show stream in some <video> element.
           this.remoteVideo.srcObject = remoteStream;
-          this.localVideo.srcObject = await this.getStream();
+          this.localVideo.srcObject = await this.getStream(false, true);
         });
         this.mediaConnection.on("close", () => {
           console.log("media close");
@@ -219,8 +223,12 @@ export class VideoCallPage extends Component {
       });
       this.dataConnection.on("close", async () => {
         console.log("conn close");
-        this.DisconnectRemote();
-        this.showAlert();
+
+        if (this.props.calling.isActive) {
+          this.DisconnectRemote();
+          this.showAlert();
+          this.startConnecting();
+        }
         // await setisActive(true);
         // this.DisconnectCall();
       });
@@ -245,40 +253,43 @@ export class VideoCallPage extends Component {
       // this.socket.emit("userConnected", {
       //   connectedTo: this.socket.id,
       // });
+      this.dataConnection = conn;
 
-      conn.on("data", (data) => {
+      this.dataConnection.on("data", (data) => {
         // Will print 'hi!'
         console.log(data);
       });
-      conn.on("open", () => {
+      this.dataConnection.on("open", () => {
         console.log("peer open");
         // conn.send({ peerId: this.peer.id });
       });
-      conn.on("close", async () => {
+      this.dataConnection.on("close", async () => {
         console.log("conns close");
         // await setisActive(true);
         // this.DisconnectCall();
-        this.DisconnectRemote();
-        this.showAlert();
+        if (this.props.calling.isActive) {
+          this.DisconnectRemote();
+          this.showAlert();
+          this.startConnecting();
+        }
       });
-      this.dataConnection = conn;
     });
 
     this.peer.on("call", async (call) => {
-      call.answer(await this.getStream()); // Answer the call with an A/V stream.
-      call.on("stream", async (remoteStream) => {
+      this.mediaConnection = call;
+      this.mediaConnection.answer(await this.getStream(true, true)); // Answer the call with an A/V stream.
+      this.mediaConnection.on("stream", async (remoteStream) => {
         // Show stream in some <video> element.
         this.remoteVideo.srcObject = remoteStream;
-        this.localVideo.srcObject = await this.getStream();
+        this.localVideo.srcObject = await this.getStream(false, true);
 
         // remoteVideo.load();
         // remoteVideo.play();
       });
-      call.on("close", () => {
+      this.mediaConnection.on("close", () => {
         console.log("medias close");
         // disconnect();
       });
-      this.mediaConnection = call;
     });
 
     this.peer.on("error", (errr) => {
@@ -302,7 +313,6 @@ export class VideoCallPage extends Component {
         "disconnected",
         { isAvailable: this.props.calling.isActive },
         async (res) => {
-          this.props.dispatch(NotConnected());
           this.props.dispatch(StopConnecting());
           console.log("database disconnected ", this.props.calling.isActive);
           if (this.props.calling.isActive) {
@@ -314,12 +324,30 @@ export class VideoCallPage extends Component {
     window.addEventListener("load", function () {
       window.scrollTo(0, 1);
     });
+    window.addEventListener(
+      "blur",
+      () => {
+        this.doSomethingBeforeUnload();
+      },
+      false
+    );
+    window.addEventListener("beforeunload", (ev) => {
+      ev.preventDefault();
+      return this.doSomethingBeforeUnload();
+    });
   }
-  componentDidUpdate(prevProps, preState) {
-    // console.log(`update ${this.peer.disconnected}`);
-    // console.log(`update ${JSON.stringify(prevProps)}`);
-    // console.log(`update ${JSON.stringify(preState)}`);
-  }
+  // componentDidUpdate(prevProps, preState) {
+  //   // console.log(`update ${this.peer.disconnected}`);
+  //   // console.log(`update ${JSON.stringify(prevProps)}`);
+  //   // console.log(`update ${JSON.stringify(preState)}`);
+  // }
+
+  doSomethingBeforeUnload = async () => {
+    await this.props.dispatch(GoOffline());
+    this.DisconnectCall();
+  };
+
+  setupBeforeUnloadListener = () => {};
 
   startConnecting = () => {
     if (this.state.camNotFound) {
@@ -357,14 +385,17 @@ export class VideoCallPage extends Component {
   };
 
   DisconnectRemote = () => {
+    this.dataConnection.close();
+    this.mediaConnection.close();
+    // this.peer.disconnect();
     this.initVideo();
     this.socket.emit(
       "disconnected",
       { isAvailable: this.props.calling.isActive },
       (res) => {
-        this.props.dispatch(NotConnected());
         this.props.dispatch(StopConnecting());
         console.log("database dis connected ", this.props.calling.isActive);
+        this.setState({ ...this.state, client: {} });
       }
     );
   };
@@ -374,17 +405,16 @@ export class VideoCallPage extends Component {
       console.log("con found");
       this.dataConnection.close();
       this.mediaConnection.close();
-      //   this.peer.disconnect();
-      // peer.current.destroy();
+      // this.peer.disconnect();
       this.initVideo();
     }
+    this.props.dispatch(StopConnecting());
+
     this.socket.emit(
       "disconnected",
       { isAvailable: this.props.calling.isActive },
       (res) => {
-        this.props.dispatch(NotConnected());
-        this.props.dispatch(StopConnecting());
-        console.log("database dis connected ", this.props.calling.isActive);
+        console.log("User did disconnect", this.props.calling.isActive);
       }
     );
   };
@@ -424,10 +454,14 @@ export class VideoCallPage extends Component {
   };
 
   handleLoginRegisterDialog = () => {
-    this.setState({
-      ...this.state,
-      showLoginRegister: !this.state.showLoginRegister,
-    });
+    if (cookie.load("id")) {
+      this.handleToggleProfileDialog();
+    } else {
+      this.setState({
+        ...this.state,
+        showLoginRegister: !this.state.showLoginRegister,
+      });
+    }
   };
 
   setCountrySelect = (country) => {
@@ -483,8 +517,7 @@ export class VideoCallPage extends Component {
 
   render() {
     console.log(`props ${JSON.stringify(this.state)}`);
-    const { country } = this.state.client;
-    console.log(`cou ${countries.country}`);
+
     return (
       <div className="w-screen h-screen flex flex-col bg-black overflow-hidden  ">
         <CamNotFoundDialog
@@ -560,18 +593,24 @@ export class VideoCallPage extends Component {
                 showTermsPopper={this.state.showTermsPopper}
               />
               <div className="flex items-center justify-center space-x-3 w-full ">
-                <img
-                  src={GoogleIcon}
-                  className="w-16 h-16 rounded-full bg-white p-2 cursor-pointer"
-                />
-                <FaFacebook
-                  size={64}
-                  className="p-2 bg-blue-700 rounded-full text-white cursor-pointer"
-                />
-                <FaEnvelope
-                  size={64}
-                  className="p-2 bg-white rounded-full cursor-pointer"
-                />
+                <ComponentGoogleButton>
+                  <img
+                    src={GoogleIcon}
+                    className="w-16 h-16 rounded-full bg-white p-2 cursor-pointer"
+                  />
+                </ComponentGoogleButton>
+                <ComponentFacebookButton>
+                  <FaFacebook
+                    size={64}
+                    className="p-2 bg-blue-700 rounded-full text-white cursor-pointer"
+                  />
+                </ComponentFacebookButton>
+                <div onClick={() => this.handleLoginRegisterDialog()}>
+                  <FaEnvelope
+                    size={64}
+                    className="p-2 bg-white rounded-full cursor-pointer"
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -597,10 +636,10 @@ export class VideoCallPage extends Component {
 
           {this.props.calling.isActive && (
             <div className="">
-              <div className="flex flex-col absolute top-0 left-0 right-0 justify-between items-center">
-                <div className="flex space-x-2 p-2">
+              <div className="flex flex-col  absolute top-0 left-0 right-0 justify-between items-center ">
+                <div className="flex space-x-2 p-2 lg:z-50 lg:relative">
                   <div
-                    className=" p-2 cursor-pointer rounded-lg shadow-md bg-gray-100 text-black text-base lg:text-lg font-bold  flex items-center justify-center"
+                    className="p-2 cursor-pointer rounded-lg shadow-md bg-gray-100 text-black text-base lg:text-lg font-bold  flex items-center justify-center"
                     onClick={() => this.handleCSelectGenderDialog()}
                   >
                     FLIRT WITH
@@ -628,7 +667,8 @@ export class VideoCallPage extends Component {
                     <FaCaretDown size={25} className="ml-2" />
                   </div>
                 </div>
-                <div className="flex  items-center justify-between w-full p-2 lg:absolute lg:top-0 lg:right-0 lg:left-0">
+
+                <div className="flex  items-center justify-between w-full p-2 lg:absolute lg:top-0 lg:right-0 lg:left-0 z-0">
                   {localStorage.getItem("name") && (
                     <div
                       className=" flex sm:flex-col justify-between items-center cursor-pointer "
@@ -659,11 +699,11 @@ export class VideoCallPage extends Component {
                       )}
                       <div className="flex items-center justify-between mt-2">
                         <img
-                          className={`w-8 h-8 rounded-full flag:${this.state.client.country.toUpperCase()}`}
+                          className={`w-8 h-8 rounded-full flag:${this.state.client.country}`}
                         />
                         <div className="text-base font-bold text-white ml-2">
                           {Object.entries(countries).map(([key, value]) => {
-                            if (key == country) {
+                            if (key == this.state.client.country) {
                               return value.name;
                             }
                           })}
@@ -686,9 +726,7 @@ export class VideoCallPage extends Component {
                   </div>
                   <div
                     className="bg-blue-600 m-2 rounded-full cursor-pointer"
-                    onClick={async () => {
-                      this.props.dispatch(Disconnect());
-                    }}
+                    onClick={() => this.DisconnectCall()}
                   >
                     <FaArrowAltCircleRight
                       size={70}
@@ -740,11 +778,11 @@ const CamNotFoundDialog = (props) => {
       onClose={() => props.onClose()}
     >
       <DialogTitle id="simple-dialog-title">
-        Sorry your device not supporting camera support{" "}
+        Sorry your device not supporting camera hardware{" "}
       </DialogTitle>
       <DialogContent id="alert-dialog-description">
         <DialogContentText id="alert-dialog-description">
-          To allow camera permission allow requested permission
+          To countinue please allow requested permission
         </DialogContentText>
       </DialogContent>
       <DialogActions>

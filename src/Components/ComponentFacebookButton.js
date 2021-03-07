@@ -1,32 +1,51 @@
 import { Button, makeStyles } from "@material-ui/core";
 import React from "react";
+import { useCookies } from "react-cookie";
+import FacebookLogin from "react-facebook-login";
 import { FaFacebook } from "react-icons/fa";
-
-const useStyle = makeStyles({
-  button: {
-    fontSize: 17,
-    fontWeight: "bold",
-  },
-});
+import AxiosInstance from "../utils/AxiosInstance";
 
 function ComponentFacebookButton(props) {
-  const classes = useStyle();
+  const [cookies, setCookie, removeCookie] = useCookies(["auth"]);
+
+  const responseFacebook = async (res) => {
+    console.log(res);
+    if (res.name) {
+      const user = {
+        name: res.name,
+        email: res.email,
+        signupType: "facebook",
+        password: res.accessToken,
+        userId: res.userID,
+        accessToken: res.signedRequest,
+        picture: res.picture.data.url,
+      };
+
+      const result = await AxiosInstance.post("/auth/register", user, null);
+      console.log(`result ${JSON.stringify(result)}`);
+
+      if (result.status == 200 && result.data) {
+        setCookie("id", result.data.token);
+        localStorage.setItem("name", user.name);
+        localStorage.setItem("email", user.email);
+        localStorage.setItem("picture", user.picture);
+        localStorage.setItem("signUpType", user.signupType);
+      }
+    }
+  };
 
   return (
-    <div
-      className="group p-2 m-2 mx-3 cursor-pointer flex flex-row w-72 items-center justify-around bg-indigo-800 hover:bg-indigo-900 bg-gray-200 rounded-md focus:ring-2 focus:ring-blue-600 hover:shadow-lg "
-      onClick={() => {
-        if (props.onClick) {
-          props.onClick();
-          props.onClose();
-        }
-      }}
-    >
-      <FaFacebook className="w-8 h-8 text-white" />
-      <div className="text-lg text-white font-semibold uppercase  group-hover:text-xl">
-        Login with Facebook
-      </div>
-    </div>
+    <FacebookLogin
+      appId="248937180191492"
+      autoLoad={false}
+      fields="name,email,picture,gender"
+      callback={responseFacebook}
+      // scope="public_profile,user_gender,user_location,user_age_range"
+      cssClass="w-full"
+      // render={(renderProps) => <div onClick={renderProps.onClick}>hello</div>}
+      textButton=""
+      icon={props.children}
+    />
   );
 }
 

@@ -1,6 +1,6 @@
 module.exports = {
   purge: {
-    enabled: true,
+    enabled: process.env.REACT_APP_TAILWIND_MIN,
     content: [
       "./src/**/*.html",
       "./src/**/*.vue",

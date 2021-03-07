@@ -5,7 +5,6 @@ import {
   GO_OFFLINE,
   GO_ONLINE,
   NOTCONNECTED,
-  NOT_CONNECTED,
   WAITING,
 } from "../CallingAction";
 
@@ -36,10 +35,7 @@ const CallingReducer = (state = initialState, action) => {
       return { ...state, connectStatus: DISCONNECT };
     }
     case NOTCONNECTED: {
-      return { ...state, connectStatus: NOTCONNECTED };
-    }
-    case NOT_CONNECTED: {
-      return { ...state, connected: false };
+      return { ...state, connectStatus: NOTCONNECTED, connected: false };
     }
     default:
       return state;

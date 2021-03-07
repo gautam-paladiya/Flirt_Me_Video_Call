@@ -29,6 +29,7 @@ function TermsComponent(props) {
       <Switch
         aria-describedby="terms"
         checked={terms}
+        value={terms}
         onChange={(e) => onChangeTerms(e)}
         color="primary"
         name="checkedA"

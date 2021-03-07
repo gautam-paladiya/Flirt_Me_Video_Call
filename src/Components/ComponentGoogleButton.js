@@ -1,25 +1,49 @@
 import React from "react";
-import GoogleIcon from "../assets/images/google.png";
+import { useCookies } from "react-cookie";
+import GoogleLogin from "react-google-login";
+import AxiosInstance from "../utils/AxiosInstance";
 
 function ComponentGoogleButton(props) {
+  const [cookies, setCookie, removeCookie] = useCookies(["auth"]);
+
+  const responseGoogle = async (res) => {
+    console.log(res.getBasicProfile());
+    const profile = res.getBasicProfile();
+    const user = {
+      name: profile.getName(),
+      email: profile.getEmail(),
+      password: res.getAuthResponse().id_token,
+      userId: profile.getId(),
+      picture: profile.getImageUrl(),
+      signupType: "google",
+    };
+
+    const result = await AxiosInstance.post("/auth/register", user, null);
+    console.log(`result ${JSON.stringify(result)}`);
+
+    if (result.status == 200 && result.data) {
+      setCookie("id", result.data.token);
+      localStorage.setItem("name", user.name);
+      localStorage.setItem("email", user.email);
+      localStorage.setItem("picture", user.picture);
+      localStorage.setItem("signUpType", user.signupType);
+    }
+  };
+  const responseGoogleFailed = (res) => {
+    console.log(res);
+  };
+
   return (
-    <div
-      className="group p-2 m-2 mx-3 cursor-pointer flex flex-row w-72 items-center justify-around bg-white hover:bg-gray-400 bg-gray-300 rounded-md focus:ring-2 focus:ring-blue-600 hover:shadow-lg "
-      onClick={() => {
-        if (props.onClick) {
-          props.onClick();
-          props.onClose();
-        }
+    <GoogleLogin
+      clientId={process.env.REACT_APP_GOOGLE_ID}
+      render={(renderProps) => {
+        return <div onClick={renderProps.onClick}>{props.children}</div>;
       }}
-    >
-      <img
-        src={GoogleIcon}
-        className="w-8 h-8 text-black group-hover:text-white"
-      />
-      <div className="text-lg text-gray-700 font-bold uppercase  group-hover:text-xl">
-        Login with Google
-      </div>
-    </div>
+      onSuccess={responseGoogle}
+      onFailure={responseGoogleFailed}
+      cookiePolicy={"single_host_origin"}
+      isSignedIn={true}
+    />
   );
 }
 
