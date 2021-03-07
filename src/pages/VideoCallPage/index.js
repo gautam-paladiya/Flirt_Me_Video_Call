@@ -5,14 +5,6 @@ import io from "socket.io-client";
 import Peer from "peerjs";
 import { FaPlay, FaGlobe, FaCaretDown } from "react-icons/fa";
 
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  Button,
-  DialogActions,
-} from "@material-ui/core";
 import { BsGearFill } from "react-icons/bs";
 import {
   FaArrowRight,
@@ -49,6 +41,8 @@ import AxiosInstance from "../../utils/AxiosInstance";
 import ComponentFacebookButton from "../../Components/ComponentFacebookButton";
 import ComponentGoogleButton from "../../Components/ComponentGoogleButton";
 import cookie from "react-cookies";
+import LogHelper from "../../utils/LogHelper";
+import CamNotFoundDialogComponent from "./CamNotFoundDialogComponent";
 
 const stripePromise = loadStripe("pk_test_6pRNASCoBOKtIshFeQd4XMUh");
 const CALLER = "CALLER";
@@ -335,6 +329,8 @@ export class VideoCallPage extends Component {
       ev.preventDefault();
       return this.doSomethingBeforeUnload();
     });
+
+    console.log(`NODE ${process.env.NODE_ENV}`);
   }
   // componentDidUpdate(prevProps, preState) {
   //   // console.log(`update ${this.peer.disconnected}`);
@@ -441,6 +437,7 @@ export class VideoCallPage extends Component {
   };
 
   handleChangeTerms = (e) => {
+    console.log(e);
     this.setState(
       {
         ...this.state,
@@ -516,11 +513,11 @@ export class VideoCallPage extends Component {
   };
 
   render() {
-    console.log(`props ${JSON.stringify(this.state)}`);
+    LogHelper(`NODE ${JSON.stringify(this.state)}`);
 
     return (
       <div className="w-screen h-screen flex flex-col bg-black overflow-hidden  ">
-        <CamNotFoundDialog
+        <CamNotFoundDialogComponent
           display={this.state.showCameraDialog}
           onClose={() =>
             this.setState({ ...this.state, showCameraDialog: false })
@@ -562,17 +559,17 @@ export class VideoCallPage extends Component {
           />
 
           {!this.props.calling.isActive && (
-            <div className="opacity-80  flex flex-col items-center justify-center space-y-9 absolute top-0 left-0 h-full w-full">
-              <img src="/flirtLogo.png" className="w-96 h-80 " />
-              {/* <h1 className="text-5xl lg:font-6xl font-bold text-red-500 ">
-                Flirt Me Baby
-              </h1> */}
-              <h2 className="text-red-500 font-extrabold text-2xl">
-                856,546 joined Flirt Me Baby
+            <div className="opacity-80  flex flex-col items-center justify-center space-y-9 absolute top-0 left-0 h-full w-full px-3">
+              <img src="/logo.png" className="w-52 h-48 " />
+              <h1 className="text-5xl lg:font-7xl font-bold text-red-500 font-Love ">
+                {process.env.REACT_APP_NAME}
+              </h1>
+              <h2 className="text-red-500 font-extrabold text-lg font-serif">
+                856,546 joined {process.env.REACT_APP_NAME}
               </h2>
               <div className="flex flex-row w-full justify-center space-x-3 my-10 ">
                 <div
-                  className=" py-2 cursor-pointer rounded-lg shadow-md bg-gray-100 text-black text-lg font-bold px-5 flex items-center justify-center"
+                  className=" font-mono p-3 cursor-pointer rounded-lg shadow-md bg-gray-100 text-black text-xl font-bold  flex items-center justify-center"
                   onClick={() => this.toggleGender()}
                 >
                   I AM : {this.state.gender}
@@ -582,7 +579,7 @@ export class VideoCallPage extends Component {
                     this.socket.emit("online");
                     this.startConnecting();
                   }}
-                  className=" py-2 cursor-pointer rounded-lg shadow-md bg-gray-100 text-black text-lg font-bold px-5 flex items-center justify-center"
+                  className=" font-mono p-3 cursor-pointer rounded-lg shadow-md bg-gray-100 text-black text-xl font-bold  flex items-center justify-center"
                 >
                   {<FaPlay size={22} className="text-black mr-3" />} Start
                 </div>
@@ -655,7 +652,7 @@ export class VideoCallPage extends Component {
                     <FaCaretDown size={25} className="ml-2" />
                   </div>
                   <div
-                    className=" p-2 cursor-pointer rounded-lg shadow-md bg-gray-100 text-black text-base lg:text-lg font-bold flex items-center justify-center"
+                    className=" font-mono p-2 cursor-pointer rounded-lg shadow-md bg-gray-100 text-black text-base lg:text-lg font-bold flex items-center justify-center"
                     onClick={() => this.handleCountrySelectDialog()}
                   >
                     LOCATION{" "}
@@ -768,41 +765,6 @@ export class VideoCallPage extends Component {
     );
   }
 }
-
-const CamNotFoundDialog = (props) => {
-  return (
-    <Dialog
-      open={props.display}
-      aria-labelledby="simple-dialog-title"
-      aria-describedby="alert-dialog-description"
-      onClose={() => props.onClose()}
-    >
-      <DialogTitle id="simple-dialog-title">
-        Sorry your device not supporting camera hardware{" "}
-      </DialogTitle>
-      <DialogContent id="alert-dialog-description">
-        <DialogContentText id="alert-dialog-description">
-          To countinue please allow requested permission
-        </DialogContentText>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={() => props.onClose()} color="primary">
-          Disagree
-        </Button>
-        <Button
-          onClick={async () => {
-            await props.onAgree();
-            return props.onClose();
-          }}
-          color="primary"
-          autoFocus
-        >
-          Agree
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-};
 
 const mapStateToProps = (state) => {
   return {

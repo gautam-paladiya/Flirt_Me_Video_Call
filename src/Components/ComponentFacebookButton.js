@@ -1,13 +1,10 @@
-import { Button, makeStyles } from "@material-ui/core";
 import React from "react";
-import { useCookies } from "react-cookie";
 import FacebookLogin from "react-facebook-login";
 import { FaFacebook } from "react-icons/fa";
 import AxiosInstance from "../utils/AxiosInstance";
+import cookie from "react-cookies";
 
 function ComponentFacebookButton(props) {
-  const [cookies, setCookie, removeCookie] = useCookies(["auth"]);
-
   const responseFacebook = async (res) => {
     console.log(res);
     if (res.name) {
@@ -25,7 +22,7 @@ function ComponentFacebookButton(props) {
       console.log(`result ${JSON.stringify(result)}`);
 
       if (result.status == 200 && result.data) {
-        setCookie("id", result.data.token);
+        cookie.save("id", result.data.token, { path: "/" });
         localStorage.setItem("name", user.name);
         localStorage.setItem("email", user.email);
         localStorage.setItem("picture", user.picture);

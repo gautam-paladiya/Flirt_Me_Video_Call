@@ -1,9 +1,8 @@
-import { Switch } from "@material-ui/core";
 import React, { useState } from "react";
-import { useCookies } from "react-cookie";
 import { FaEnvelope } from "react-icons/fa";
 import TermsComponent from "../pages/VideoCallPage/TermsComponent";
 import AxiosInstance from "../utils/AxiosInstance";
+import cookie from "react-cookies";
 
 const emailFormat = /^[^s@]+@[^s@]+.[^s@]+$/;
 
@@ -11,8 +10,6 @@ function ComponentEmailButton(props) {
   const { onClose } = props;
   const [Term, setTerm] = useState(false);
   const [isLogin, setIsLogin] = useState(false);
-
-  const [cookies, setCookie, removeCookie] = useCookies(["auth"]);
 
   const [txtName, setTxtName] = useState("");
   const [txtEmail, setTxtEmail] = useState("");
@@ -58,7 +55,7 @@ function ComponentEmailButton(props) {
     const result = await AxiosInstance.post("/auth/register", user, null);
     console.log(`result ${JSON.stringify(result)}`);
     if (result.status == 200 && result.data) {
-      setCookie("id", result.data.token);
+      cookie.save("id", result.data.token, { path: "/" });
       localStorage.setItem("name", txtName);
       localStorage.setItem("email", txtEmail);
       localStorage.setItem("picture", "");

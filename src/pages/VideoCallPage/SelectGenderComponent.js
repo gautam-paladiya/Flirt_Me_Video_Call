@@ -3,18 +3,7 @@ import { FaSkullCrossbones } from "react-icons/fa";
 import MaleIcon from "../../assets/images/malel.png";
 import FemaleIcon from "../../assets/images/femalel.png";
 import GenOIcon from "../../assets/images/genderO.png";
-import {
-  Avatar,
-  Dialog,
-  DialogTitle,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  makeStyles,
-  Typography,
-  Divider,
-} from "@material-ui/core";
+import { Card, Modal } from "react-bootstrap";
 
 const list = [
   {
@@ -31,48 +20,32 @@ const list = [
   },
 ];
 
-const useStyles = makeStyles((theme) => ({
-  root: { fontSize: 25 },
-  small: {
-    width: theme.spacing(7),
-    height: theme.spacing(7),
-  },
-  name: {
-    fontSize: 25,
-    fontWeight: "bold",
-  },
-  listItem: {
-    "&:hover": {
-      opacity: 0.8,
-      backgroundColor: "red",
-      color: "white",
-    },
-    cursor: "pointer",
-  },
-}));
-
 function SelectGenderComponent(props) {
   const { display, onClose, onSelectGender } = props;
-  const classes = useStyles();
 
   return (
-    <Dialog open={display} onClose={() => onClose()} className={classes.parent}>
-      <p className="text-2xl font-bold p-5">Select your gender type</p>
-      <Divider />
-      <List>
+    <Modal show={display} onHide={onClose} size="sm">
+      <Modal.Header closeButton>
+        <Modal.Title>Select your gender type</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
         {list.map(({ icon, text }) => (
-          <ListItem
+          <Card
             key={text}
-            className={classes.listItem}
-            button
+            className=""
             onClick={() => onSelectGender(text)}
+            className="m-3 "
           >
-            <img src={icon} className="w-16 h-14 object-cover" />
-            <h1 className="text-lg font-bold text-black ">{text}</h1>
-          </ListItem>
+            <div className="p-2 flex items-center justify-start cursor-pointer hover:bg-gray-300">
+              <img src={icon} className="w-16 h-14 object-cover" />
+              <h1 className="text-2xl font-bold text-indigo-500 ml-3 font-Love">
+                {text}
+              </h1>
+            </div>
+          </Card>
         ))}
-      </List>
-    </Dialog>
+      </Modal.Body>
+    </Modal>
   );
 }
 

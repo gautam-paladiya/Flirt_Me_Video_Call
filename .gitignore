@@ -5,12 +5,16 @@
 /server/node_modules
 /.pnp
 .pnp.js
+/.vscode
 
 # testing
 /coverage
 
 # production
 /build
+
+/.vscode
+.eslintcache
 
 # misc
 .DS_Store

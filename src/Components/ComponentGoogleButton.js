@@ -1,11 +1,9 @@
 import React from "react";
-import { useCookies } from "react-cookie";
 import GoogleLogin from "react-google-login";
 import AxiosInstance from "../utils/AxiosInstance";
+import cookie from "react-cookies";
 
 function ComponentGoogleButton(props) {
-  const [cookies, setCookie, removeCookie] = useCookies(["auth"]);
-
   const responseGoogle = async (res) => {
     console.log(res.getBasicProfile());
     const profile = res.getBasicProfile();
@@ -22,7 +20,7 @@ function ComponentGoogleButton(props) {
     console.log(`result ${JSON.stringify(result)}`);
 
     if (result.status == 200 && result.data) {
-      setCookie("id", result.data.token);
+      cookie.save("id", result.data.token, { path: "/" });
       localStorage.setItem("name", user.name);
       localStorage.setItem("email", user.email);
       localStorage.setItem("picture", user.picture);

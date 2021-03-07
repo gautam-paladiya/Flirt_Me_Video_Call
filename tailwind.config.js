@@ -1,6 +1,7 @@
 module.exports = {
   purge: {
-    enabled: process.env.REACT_APP_TAILWIND_MIN,
+    mode: "all",
+    enabled: process.env.NODE_ENV == "development" ? false : true,
     content: [
       "./src/**/*.html",
       "./src/**/*.vue",
@@ -11,6 +12,9 @@ module.exports = {
   darkMode: false, // or 'media' or 'class'
   theme: {
     extend: {},
+    fontFamily: {
+      Love: "Love Ya Like A Sister, cursive",
+    },
   },
   variants: {
     extend: {

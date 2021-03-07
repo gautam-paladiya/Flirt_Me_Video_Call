@@ -1,27 +1,26 @@
-import React, { useState } from "react";
-import ComponentAuthButton from "./ComponentAuthButton";
-import { FaFacebook, FaGoogle, FaEnvelope, FaUserAlt } from "react-icons/fa";
-import ReactFacebookLogin from "react-facebook-login";
-import AxiosInstance from "../utils/AxiosInstance";
-import GoogleLogin from "react-google-login";
-import { Dialog, Switch } from "@material-ui/core";
-import FacebookLogin from "react-facebook-login/dist/facebook-login-render-props";
+import React from "react";
+import { FaFacebook, FaUserAlt } from "react-icons/fa";
 import ComponentFacebookButton from "./ComponentFacebookButton";
 import ComponentGoogleButton from "./ComponentGoogleButton";
 import ComponentEmailButton from "./ComponentEmailButton";
 import { connect } from "react-redux";
 import GoogleIcon from "../assets/images/google.png";
+import { Modal } from "react-bootstrap";
 
 function LoginRegisterComponent(props) {
   const { display, onClose } = props;
 
   return (
-    <Dialog open={display} onClose={onClose}>
+    <Modal show={display} onHide={onClose}>
       <div className="m-0 p-5 w-full h-full items-center flex flex-col">
         <div className="flex flex-col items-center w-full ">
-          <h1 className="text-3xl text-center mb-4 font-bold text-blue-600 ">
-            It’s Easy to Join {process.env.REACT_APP_NAME}, Get Started Now
-          </h1>
+          <Modal.Header closeButton>
+            <Modal.Title>
+              <h1 className="text-3xl text-center mb-4 font-bold text-blue-600 ">
+                It’s Easy to Join {process.env.REACT_APP_NAME}, Get Started Now
+              </h1>
+            </Modal.Title>
+          </Modal.Header>
 
           <ComponentFacebookButton>
             <div
@@ -66,7 +65,7 @@ function LoginRegisterComponent(props) {
           </p>
         </div>
       </div>
-    </Dialog>
+    </Modal>
   );
 }
 
