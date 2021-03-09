@@ -112,7 +112,6 @@ export class VideoCallPage extends Component {
       await this.setState({
         ...this.state,
         camNotFound: true,
-        showCameraDialog: true,
       });
     }
   };
