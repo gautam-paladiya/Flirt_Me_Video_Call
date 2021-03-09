@@ -3,7 +3,7 @@ import { Modal, Button } from "react-bootstrap";
 
 function CamNotFoundDialogComponent(props) {
   return (
-    <Modal show={props.display} onHide={props.onClose}>
+    <Modal show={props.display} onHide={props.onClose} centered>
       <Modal.Header id="simple-dialog-title" closeButton>
         <Modal.Title>
           Sorry your device not supporting camera hardware{" "}

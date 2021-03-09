@@ -9,7 +9,7 @@ function SelectCGenderComponent(props) {
   const { onClose, display, selectCGender } = props;
 
   return (
-    <Modal show={display} onHide={onClose}>
+    <Modal show={display} onHide={onClose} centered>
       <Modal.Header closeButton>
         <Modal.Title> Connect me to :</Modal.Title>
       </Modal.Header>

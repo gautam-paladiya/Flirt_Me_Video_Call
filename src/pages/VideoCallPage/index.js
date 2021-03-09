@@ -78,13 +78,24 @@ export class VideoCallPage extends Component {
 
   token = cookie.load("id");
 
+  //  {
+  //               frameRate: quality ? quality : 12,
+  //               noiseSuppression: true,
+  //               width: {min: 640, ideal: 1280, max: 1920},
+  //               height: {min: 480, ideal: 720, max: 1080}
+  //           }
+
   getStream = (audio = true, video = true) => {
     try {
-      const stream = navigator.mediaDevices
-        .getUserMedia({
-          video: video,
-          audio: audio,
-        })
+      const myNavigator =
+        navigator.mediaDevices.getUserMedia ||
+        navigator.mediaDevices.webkitGetUserMedia ||
+        navigator.mediaDevices.mozGetUserMedia ||
+        navigator.mediaDevices.msGetUserMedia;
+      const stream = myNavigator({
+        video: video ? { noiseSuppression: true } : false,
+        audio: audio,
+      })
         .then((stream) => {
           return stream;
         })
@@ -163,15 +174,15 @@ export class VideoCallPage extends Component {
     this.localVideo = document.getElementById("local-video");
     this.initVideo();
 
-    console.log(`${process.env.REACT_APP_SOCKET_CONNECTION_STRING}`);
-    this.socket = io(`${process.env.REACT_APP_SOCKET_CONNECTION_STRING}`);
+    console.log(`${process.env.REACT_APP_SERVER_HOST}`);
+    this.socket = io(`${process.env.REACT_APP_SERVER_HOST}`);
 
     this.peer = new Peer({
+      host: process.env.REACT_APP_PEER_URL,
+      port: 9000,
+      path: "/myapp",
       config: {
-        iceServers: [
-          { url: "stun:stun.l.google.com:19302" },
-          { url: "stun:stunserver.org" },
-        ],
+        iceServers: [{ url: "stun:stun.l.google.com:19302" }],
       },
     });
 
@@ -556,14 +567,15 @@ export class VideoCallPage extends Component {
             width="100"
             height="100"
           />
+          {/* <img src="/bg.jpg" className="w-full h-full object-cover" /> */}
 
           {!this.props.calling.isActive && (
-            <div className="opacity-80  flex flex-col items-center justify-center space-y-9 absolute top-0 left-0 h-full w-full px-3">
+            <div className="flex flex-col items-center justify-center space-y-9 absolute top-0 left-0 h-full w-full px-3">
               <img src="/logo.png" className="w-52 h-48 " />
-              <h1 className="text-7xl lg:font-5xl font-bold text-red-500 font-Love ">
+              <h1 className="text-7xl lg:font-7xl font-bold text-red-600 font-Love text-center  ">
                 {process.env.REACT_APP_NAME}
               </h1>
-              <h2 className="text-yellow-400 font-extrabold text-xl font-serif">
+              <h2 className="text-yellow-300 font-extrabold text-xl font-serif">
                 856,546 joined {process.env.REACT_APP_NAME}
               </h2>
               <div className="flex flex-row w-full justify-center space-x-3 my-10 ">
@@ -571,7 +583,7 @@ export class VideoCallPage extends Component {
                   className=" font-serif px-3 py-2 cursor-pointer rounded-lg shadow-md bg-gray-100 text-black text-xl font-extrabold  flex items-center justify-center"
                   onClick={() => this.toggleGender()}
                 >
-                  I AM : {this.state.gender && "?"}
+                  I AM : {this.state.gender || "?"}
                 </div>
                 <div
                   onClick={() => {
@@ -601,11 +613,11 @@ export class VideoCallPage extends Component {
                     className="p-2 bg-blue-700 rounded-full text-white cursor-pointer"
                   />
                 </ComponentFacebookButton>
-                <div onClick={() => this.handleLoginRegisterDialog()}>
-                  <FaEnvelope
-                    size={64}
-                    className="p-2 bg-white rounded-full cursor-pointer"
-                  />
+                <div
+                  onClick={() => this.handleLoginRegisterDialog()}
+                  className="p-2 bg-white rounded-full cursor-pointer"
+                >
+                  <FaEnvelope size={45} />
                 </div>
               </div>
             </div>
@@ -616,17 +628,19 @@ export class VideoCallPage extends Component {
             <img src={IosIcon} className="w-48 h-20" />
           </div> */}
 
-          <div className="absolute bg-transparent w-1/3 h-1/3 bottom-0 right-0">
+          <div
+            className="absolute bg-transparent w-1/3 h-1/4 lg:w-2/5 lg:h-2/4  mb-2 mr-2 bottom-0 right-0"
+            style={{
+              visibility:
+                this.props.calling.connectStatus == CONNECTED
+                  ? "visible"
+                  : "hidden",
+            }}
+          >
             <video
               autoPlay
               id="local-video"
               className="w-full h-full min-h-full  bg-transparent object-cover "
-              style={{
-                visibility:
-                  this.props.calling.connectStatus == CONNECTED
-                    ? "visible"
-                    : "hidden",
-              }}
             />
           </div>
 

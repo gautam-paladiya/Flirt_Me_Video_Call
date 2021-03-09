@@ -30,7 +30,7 @@ function ProfileDialogComponent(props) {
   };
 
   return (
-    <Modal show={display} onHide={onClose} size="sm">
+    <Modal show={display} onHide={onClose} size="sm" centered>
       <Modal.Header closeButton>
         <Modal.Title>Profile</Modal.Title>
       </Modal.Header>

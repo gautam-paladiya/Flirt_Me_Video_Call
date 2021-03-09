@@ -11,7 +11,7 @@ function LoginRegisterComponent(props) {
   const { display, onClose } = props;
 
   return (
-    <Modal show={display} onHide={onClose}>
+    <Modal show={display} onHide={onClose} centered>
       <div className="m-0 p-5 w-full h-full items-center flex flex-col">
         <div className="flex flex-col items-center w-full ">
           <Modal.Header closeButton>

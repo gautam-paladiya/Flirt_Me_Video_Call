@@ -30,22 +30,22 @@ on:
 #         run: echo "The Command id is ${{ steps.ssm.outputs.command-id }}"
 jobs:
   build:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [14.x]
+    # strategy:
+    #   matrix:
+    #     node-version: [14.x]
 
     steps:
       - uses: actions/checkout@v2
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node-version }}
-      - run: npm i
-      - run: npm run build
-        env:
-          CI: false
+      # - name: Use Node.js ${{ matrix.node-version }}
+      #   uses: actions/setup-node@v1
+      #   with:
+      #     node-version: ${{ matrix.node-version }}
+      # - run: npm i
+      # - run: npm run build
+      #   env:
+      #     CI: false
       - name: AWS SSM Send Command
         uses: peterkimzz/aws-ssm-send-command@1.0.1
         with:
@@ -54,5 +54,5 @@ jobs:
           aws-region: us-east-2
           instance-ids: ${{ secrets.INSTANCE_ID  }}
           comment: Deploy the master branch
-          working-directory: /home/ubuntu
-          command: cd Flirt_Me_Video_Call && git stash && sudo git pull && sudo systemctl restart nginx && git stash clear
+          # working-directory: /home/ubuntu
+          # command: cd Flirt_Me_Video_Call && sudo su && git stash save && git pull --rebase && npm install && npm run build && systemctl restart nginx && git stash clear

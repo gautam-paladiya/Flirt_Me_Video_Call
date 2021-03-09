@@ -7,7 +7,7 @@ function TermsComponent(props) {
   const refTerms = useRef();
 
   return (
-    <Card elevation={3} className="flex flex-row items-center p-2 space-x-2">
+    <Card elevation={3} className="flex flex-row items-center p-1 space-x-2">
       <Form.Check
         className="custom-switch-xl"
         width={100}
@@ -27,7 +27,7 @@ function TermsComponent(props) {
           </Popover.Content>
         </Popover>
       </Overlay>
-      <p className="text-base font-bold font-mono my-auto">
+      <p className="text-sm font-bold font-mono my-auto">
         I certify I have read and agree to the <u>Terms of Use</u> and
         Guidelines.
       </p>

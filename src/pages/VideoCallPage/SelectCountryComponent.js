@@ -7,7 +7,7 @@ function SelectCountryComponent(props) {
 
   console.log(`cu ${JSON.stringify(countries.AE.emojiU)}`);
   return (
-    <Modal show={display} onHide={onClose}>
+    <Modal show={display} onHide={onClose} centered>
       <Modal.Header closeButton>
         <Modal.Title>Select Matching Country</Modal.Title>
       </Modal.Header>

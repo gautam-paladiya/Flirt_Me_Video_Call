@@ -24,7 +24,7 @@ function SelectGenderComponent(props) {
   const { display, onClose, onSelectGender } = props;
 
   return (
-    <Modal show={display} onHide={onClose} size="sm">
+    <Modal show={display} onHide={onClose} size="sm" centered>
       <Modal.Header closeButton>
         <Modal.Title>Select your gender type</Modal.Title>
       </Modal.Header>
