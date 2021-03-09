@@ -30,8 +30,7 @@ on:
 #         run: echo "The Command id is ${{ steps.ssm.outputs.command-id }}"
 jobs:
   build:
-    runs-on: ubuntu-latest
-
+    runs-on: self-hosted
     strategy:
       matrix:
         node-version: [12.x]
@@ -45,8 +44,8 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - run: npm i
       - run: npm run build
-        env:
-          CI: false
+        # env:
+        #   CI: false
       - name: AWS SSM Send Command
         uses: peterkimzz/aws-ssm-send-command@1.0.1
         with:
