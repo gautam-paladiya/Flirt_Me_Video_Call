@@ -560,25 +560,25 @@ export class VideoCallPage extends Component {
           {!this.props.calling.isActive && (
             <div className="opacity-80  flex flex-col items-center justify-center space-y-9 absolute top-0 left-0 h-full w-full px-3">
               <img src="/logo.png" className="w-52 h-48 " />
-              <h1 className="text-5xl lg:font-7xl font-bold text-red-500 font-Love ">
+              <h1 className="text-8xl lg:font-5xl font-bold text-red-500 font-Love ">
                 {process.env.REACT_APP_NAME}
               </h1>
-              <h2 className="text-red-500 font-extrabold text-lg font-serif">
+              <h2 className="text-yellow-400 font-extrabold text-xl font-serif">
                 856,546 joined {process.env.REACT_APP_NAME}
               </h2>
               <div className="flex flex-row w-full justify-center space-x-3 my-10 ">
                 <div
-                  className=" font-mono p-3 cursor-pointer rounded-lg shadow-md bg-gray-100 text-black text-xl font-bold  flex items-center justify-center"
+                  className=" font-serif px-3 py-2 cursor-pointer rounded-lg shadow-md bg-gray-100 text-black text-xl font-extrabold  flex items-center justify-center"
                   onClick={() => this.toggleGender()}
                 >
-                  I AM : {this.state.gender}
+                  I AM : {this.state.gender && "?"}
                 </div>
                 <div
                   onClick={() => {
                     this.socket.emit("online");
                     this.startConnecting();
                   }}
-                  className=" font-mono p-3 cursor-pointer rounded-lg shadow-md bg-gray-100 text-black text-xl font-bold  flex items-center justify-center"
+                  className=" font-serif px-3 py-2 cursor-pointer rounded-lg shadow-md bg-gray-100 text-black text-2xl font-extrabold  flex items-center justify-center"
                 >
                   {<FaPlay size={22} className="text-black mr-3" />} Start
                 </div>

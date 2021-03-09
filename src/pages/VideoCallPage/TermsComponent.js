@@ -7,11 +7,14 @@ function TermsComponent(props) {
   const refTerms = useRef();
 
   return (
-    <Card elevation={3} className="flex flex-row items-center p-2">
+    <Card elevation={3} className="flex flex-row items-center p-2 space-x-2">
       <Form.Check
+        className="custom-switch-xl"
+        width={100}
         id="switchEnabled"
         type="switch"
         checked={terms}
+        isValid
         onChange={(e) => onChangeTerms(e)}
         color="primary"
         name="checkedA"
@@ -24,7 +27,7 @@ function TermsComponent(props) {
           </Popover.Content>
         </Popover>
       </Overlay>
-      <p className="text-lg font-bold font-serif">
+      <p className="text-lg font-bold font-mono my-auto">
         I certify I have read and agree to the <u>Terms of Use</u> and
         Guidelines.
       </p>

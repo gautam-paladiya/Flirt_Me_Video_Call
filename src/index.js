@@ -4,6 +4,8 @@ import ReactDOM from "react-dom";
 import "./index.css";
 import "./flag.css";
 import "./tailwind.output.css";
+import "bootstrap/dist/css/bootstrap.min.css";
+
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 
 import App from "./App";

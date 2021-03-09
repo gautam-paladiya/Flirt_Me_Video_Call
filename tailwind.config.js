@@ -11,9 +11,10 @@ module.exports = {
   },
   darkMode: false, // or 'media' or 'class'
   theme: {
-    extend: {},
-    fontFamily: {
-      Love: "Love Ya Like A Sister, cursive",
+    extend: {
+      fontFamily: {
+        Love: "Love Ya Like A Sister, cursive",
+      },
     },
   },
   variants: {

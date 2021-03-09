@@ -7,53 +7,53 @@ on:
   push:
     branches: [main]
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: AWS SSM Send Command
-        uses: peterkimzz/aws-ssm-send-command@1.0.1
-        id: ssm
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID  }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY  }}
-          aws-region: us-east-2
-          instance-ids: ${{ secrets.INSTANCE_ID  }}
-
-          working-directory: /home/ubuntu
-          command: cd Flirt_Me_Video_Call && sudo git pull && sudo npm run build && sudo systemctl restart nginx
-
-      - name: Get the outputs
-        run: echo "The Command id is ${{ steps.ssm.outputs.command-id }}"
 # jobs:
-#   build:
+#   deploy:
 #     runs-on: ubuntu-latest
-
-#     strategy:
-#       matrix:
-#         node-version: [12.x]
-#         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
 #     steps:
 #       - uses: actions/checkout@v2
-#       - name: Use Node.js ${{ matrix.node-version }}
-#         uses: actions/setup-node@v1
-#         with:
-#           node-version: ${{ matrix.node-version }}
-#       - run: npm i
-#       - run: npm run build
-#         env:
-#           CI: false
+
 #       - name: AWS SSM Send Command
 #         uses: peterkimzz/aws-ssm-send-command@1.0.1
+#         id: ssm
 #         with:
 #           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID  }}
 #           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY  }}
 #           aws-region: us-east-2
 #           instance-ids: ${{ secrets.INSTANCE_ID  }}
-#           comment: Deploy the master branch
+
 #           working-directory: /home/ubuntu
-#           command: /bin/sh ./deploy.sh
+#           command: cd Flirt_Me_Video_Call && git stash && sudo git pull && sudo npm run build && sudo systemctl restart nginx && git stash clear
+
+#       - name: Get the outputs
+#         run: echo "The Command id is ${{ steps.ssm.outputs.command-id }}"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [12.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npm i
+      - run: npm run build
+        env:
+          CI: false
+      - name: AWS SSM Send Command
+        uses: peterkimzz/aws-ssm-send-command@1.0.1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID  }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY  }}
+          aws-region: us-east-2
+          instance-ids: ${{ secrets.INSTANCE_ID  }}
+          comment: Deploy the master branch
+          working-directory: /home/ubuntu
+          command: cd Flirt_Me_Video_Call && git stash && sudo git pull && sudo systemctl restart nginx && git stash clear
