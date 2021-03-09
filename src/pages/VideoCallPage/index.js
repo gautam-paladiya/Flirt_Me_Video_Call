@@ -560,7 +560,7 @@ export class VideoCallPage extends Component {
           {!this.props.calling.isActive && (
             <div className="opacity-80  flex flex-col items-center justify-center space-y-9 absolute top-0 left-0 h-full w-full px-3">
               <img src="/logo.png" className="w-52 h-48 " />
-              <h1 className="text-8xl lg:font-5xl font-bold text-red-500 font-Love ">
+              <h1 className="text-7xl lg:font-5xl font-bold text-red-500 font-Love ">
                 {process.env.REACT_APP_NAME}
               </h1>
               <h2 className="text-yellow-400 font-extrabold text-xl font-serif">

@@ -27,7 +27,7 @@ function TermsComponent(props) {
           </Popover.Content>
         </Popover>
       </Overlay>
-      <p className="text-lg font-bold font-mono my-auto">
+      <p className="text-base font-bold font-mono my-auto">
         I certify I have read and agree to the <u>Terms of Use</u> and
         Guidelines.
       </p>
