@@ -179,8 +179,8 @@ export class VideoCallPage extends Component {
 
     this.peer = new Peer({
       host: process.env.REACT_APP_PEER_URL,
-      port: 9000,
-      path: "/myapp",
+      port: 80,
+      path:'myapp',
       config: {
         iceServers: [{ url: "stun:stun.l.google.com:19302" }],
       },
